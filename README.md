@@ -1,1 +1,1 @@
-这是一个库项目, 集成一些常用功能
+This is a library project that integrates some common functions
