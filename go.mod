@@ -1,4 +1,4 @@
-module ju
+module github.com/jsuserapp/ju
 
 go 1.22
 
