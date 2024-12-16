@@ -32,11 +32,9 @@ func init() {
 
 var logParam *LogParam
 
-type LogParamProc func(param *LogParam)
-
 // SetLogParam Set log parameter
 // noinspection GoUnusedExportedFunction
-func SetLogParam(proc LogParamProc) {
+func SetLogParam(proc func(param *LogParam)) {
 	proc(logParam)
 	if logParam.LogDb != nil {
 		createLogTable("")
