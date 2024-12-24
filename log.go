@@ -1,6 +1,7 @@
 package ju
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/gookit/color"
 	"strings"
@@ -18,96 +19,66 @@ const (
 	ColorBlue    = "blue"
 )
 
-// LogParam
-// LogDb: A valid Db value, it's db value can't be nil
+// _LogParam
+// LogDb: A valid Db value
 // SaveToLog: log whether save to database, default is false
-type LogParam struct {
-	logToDatabase atomic.Bool
-	LogDb         *Db
+// Log: interface of log method
+type _LogParam struct {
+	Save    atomic.Bool
+	DbType  string
+	LogDb   *sql.DB
+	LogPath string
 }
 
 func init() {
-	logParam = &LogParam{}
+	logParam = &_LogParam{}
 }
 
-var logParam *LogParam
+var logParam *_LogParam
 
-// SetLogParam Set log parameter
+// SetLogDb 设置 Log 保存到数据库的方式
+//
+// dbType string: 数据库类型, 目前支持 sqlite 和 mysql 两个值
+//
+// db *DB: 数据库, 支持 MySql 和 SQLite3, 如果这个值是 nil, 则相当于取消日志系统绑定的数据库
+//
+// save bool: 是否保存到数据库, 即使设置了日志系统绑定的数据库, 仍然可以设置不保存到数据库, 只打印到输出窗口
 // noinspection GoUnusedExportedFunction
-func SetLogParam(proc func(param *LogParam)) {
-	proc(logParam)
-	if logParam.LogDb != nil {
-		createLogTable("")
+func SetLogDb(dbType string, db *sql.DB, save bool) {
+	if dbType != LogDbTypeSqlite && dbType != LogDbTypeMysql && dbType != LogDbTypePostgre {
+		OutputColor(0, ColorRed, "不支持的数据库类型, 必须是 sqlite,mysql,postgre 之一,", dbType)
+		return
 	}
+	logParam.DbType = dbType
+	logParam.LogDb = db
+	logParam.Save.Store(save)
+	logInfo.Load()
+}
+func SetLogPath(path string, save bool) {
+	if path == "" {
+		path = "./data/log"
+	}
+	if !CreateFolder(path) {
+		OutputColor(0, ColorRed, "指定的路径无法打开:", path)
+		return
+	}
+	logParam.LogPath = path
+	logParam.Save.Store(save)
 }
 
-// noinspection GoUnusedExportedFunction
-func (lp *LogParam) SetLogToDb(log bool) {
-	lp.logToDatabase.Store(log)
+// SetLogLimit 设置日志表的最多条数, 防止日志无限增长, 但是旧的日志会被覆盖. 对于文件日志类型, 这个函数是无效的.
+func SetLogLimit(name string, limit int64) {
+	logInfo.Set(name, limit)
 }
-func createLogTable(tab string) {
-	sqlCase := "CREATE TABLE IF NOT EXISTS `log` (id INTEGER PRIMARY KEY AUTO_INCREMENT, trace VARCHAR(255) NOT NULL DEFAULT '',color VARCHAR(32) DEFAULT '',log TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
-	if tab != "" {
-		sqlCase = strings.Replace(sqlCase, "log", "log_"+tab, 1)
-	}
-	logParam.LogDb.Exec(sqlCase)
-}
-func saveLogTo(tab, trace, color, log string) {
-	sqlCase := "INSERT INTO `log` (`trace`,`color`,`log`, `created_at`) VALUES (?,?,?,?)"
-	if tab != "" {
-		sqlCase = strings.Replace(sqlCase, "log", "log_"+tab, 1)
-	}
-	sr := logParam.LogDb.Exec(sqlCase, trace, color, log, GetNowDateTime())
-	if strings.Index(sr.Error, "no such table:") == 0 {
-		createLogTable(tab)
-		logParam.LogDb.Exec(sqlCase, trace, color, log, GetNowDateTime())
-	}
+
+// ClearLog 清空指定日志数据库中的所有记录
+func ClearLog(tab string) {
+	clearLog(logParam.DbType, tab)
 }
 
 // DeleteLog 删除默认的日志记录，idStart 到 idStop 的log都会被删除，包含这两个 id，要删除一个id 设置 idStart = id = idStop
-// noinspection GoUnusedExportedFunction
-func DeleteLog(idStart, idStop int64) int64 {
-	return DeleteLogTo("", idStart, idStop)
-}
-
-// DeleteLogTo 删除指定表的日志记录，idStart 到 idStop 的log都会被删除，包含这两个 id，要删除一个id 设置 idStart = id = idStop
-func DeleteLogTo(table string, idStart, idStop int64) int64 {
-	sqlCase := "DELETE FROM log WHERE id>=? AND id<=?"
-	if table != "" {
-		sqlCase = strings.Replace(sqlCase, "log", "log_"+table, 1)
-	}
-	rst := logParam.LogDb.Exec(sqlCase, idStart, idStop)
-	if rst.Error != "" {
-		OutputColor(1, "red", rst.Error)
-		return 0
-	}
-	count, _ := rst.Result.RowsAffected()
-	return count
-}
-
-// ClearLog 清空数据库中的所有记录
-// noinspection GoUnusedExportedFunction
-func ClearLog() {
-	ClearLogTo("")
-}
-
-// ClearLogTo 清空指定日志数据库中的所有记录
-func ClearLogTo(table string) {
-	if logParam.LogDb.db == nil {
-		return
-	}
-	sqlCase := "TRUNCATE log"
-	if table != "" {
-		sqlCase = strings.Replace(sqlCase, "log", "log_"+table, 1)
-	}
-	logParam.LogDb.Exec(sqlCase)
-}
-
-// noinspection GoUnusedExportedFunction
-func Log(format string, v ...interface{}) {
-	trace := GetTrace(2)
-	fmt.Print(trace, " ")
-	fmt.Printf(format+"\n", v...)
+func DeleteLog(tab string, idStart, idStop int64) {
+	deleteLog(logParam.DbType, tab, idStart, idStop)
 }
 
 type colorPrint func(format string, a ...interface{})
@@ -142,19 +113,15 @@ func logToColor(skip int, c, tab string, v ...interface{}) {
 	fmt.Print(GetNowTimeMs(), " ", trace, " ")
 	cp := getColorPrint(c)
 	cp("%s\n", str)
-	if logParam.logToDatabase.Load() {
-		saveLogTo(tab, trace, c, str)
-	}
+	saveLog(logParam.DbType, tab, trace, c, str)
 }
 
 func logToColorF(skip int, c, tab, format string, v ...interface{}) {
 	trace := GetTrace(skip)
-	if logParam.logToDatabase.Load() {
-		saveLogTo(tab, trace, c, fmt.Sprintf(format, v...))
-	}
 	fmt.Print(GetNowTimeMs(), " ", trace, " ")
 	cp := getColorPrint(c)
 	cp(format, v...)
+	saveLog(logParam.DbType, tab, trace, c, fmt.Sprintf(format, v...))
 }
 func getColorPrint(c string) (cp colorPrint) {
 	switch c {

@@ -7,11 +7,13 @@ import (
 
 // CreateFolder 生成路径指定的文件夹，包括所有上级文件夹
 // noinspection GoUnusedExportedFunction
-func CreateFolder(folder string) {
+func CreateFolder(folder string) bool {
 	err := os.MkdirAll(folder, 0777)
 	if err != nil {
 		LogRed(err.Error())
+		return false
 	}
+	return true
 }
 
 // DeleteFolder 删除文件夹和它的内容, path 也可以是一个文件

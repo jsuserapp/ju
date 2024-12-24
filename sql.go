@@ -24,13 +24,14 @@ func (db *Db) Open(driverName, dataSourceName string) bool {
 	return CheckSuccess(err)
 }
 
-// OpenSqlite3
-// dbname: example data/log.db
+// OpenSqlite3 支持多线程写入, 这会稍微降低性能, 但是大多数场景很难避免多线程写入, 如果不启用这个特性,
+// 写入时候有概率触发表被锁定提示.
+// dbname: example ./data/log.db
 func (db *Db) OpenSqlite3(dbname string) bool {
 	if db.db != nil {
 		return true
 	}
-	d, err := sql.Open("sqlite3", dbname)
+	d, err := sql.Open("sqlite3", "file:"+dbname+"?_mutex=full&_journal_mode=WAL")
 	db.db = d
 	return CheckSuccess(err)
 }
@@ -42,6 +43,8 @@ func (db *Db) OpenMysql(host, dbname, user, pass string) bool {
 	db.db = d
 	return CheckSuccess(err)
 }
+
+// OpenPostgreSQL 打开 PostgreSQL 数据库, 这里只提供了基本参数
 func (db *Db) OpenPostgreSQL(host, port, dbname, user, pass string) bool {
 	if db.db != nil {
 		return true
@@ -49,9 +52,13 @@ func (db *Db) OpenPostgreSQL(host, port, dbname, user, pass string) bool {
 	if port == "" {
 		port = "5432"
 	}
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=require",
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, pass, dbname)
 	d, err := sql.Open("postgres", psqlInfo)
+	if err == nil {
+		_, er := d.Exec("SET client_encoding = 'UTF8';")
+		CheckError(er)
+	}
 	db.db = d
 	return CheckSuccess(err)
 }

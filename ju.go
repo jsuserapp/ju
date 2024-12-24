@@ -55,6 +55,9 @@ func GetTrace(skip int) string {
 func GetNowDateTime() string {
 	return time.Now().Format(time.DateTime)
 }
+func GetNowDateTimeMs() string {
+	return time.Now().Format("2006-01-02 15:04:05.000")
+}
 func GetNowTime() string {
 	return time.Now().Format(time.TimeOnly)
 }
