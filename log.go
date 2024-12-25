@@ -67,6 +67,10 @@ func SetLogPath(path string, save bool) {
 }
 
 // SetLogLimit 设置日志表的最多条数, 防止日志无限增长, 但是旧的日志会被覆盖. 对于文件日志类型, 这个函数是无效的.
+//
+// name string: 需要设置的日志名称, 空串对应的是默认日志.
+//
+// limit int64: 设置日志的最大条数, 此值为 0 或负数, 则取消最大条数.
 func SetLogLimit(name string, limit int64) {
 	logInfo.Set(name, limit)
 }

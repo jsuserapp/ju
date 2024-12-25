@@ -39,7 +39,7 @@ func (li *LogInfo) Set(name string, count int64) {
 		name = "log_"
 	}
 	if count <= 0 {
-		count = 1000
+		count = 0
 	}
 	li.Lock()
 	li.info[name] = count
