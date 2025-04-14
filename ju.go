@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"path"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -117,11 +118,47 @@ func Rand58String(n int) string {
 	}
 	return b
 }
-func JsonParse(data []byte, v interface{}) {
+func JsonDecode(data []byte, v interface{}) bool {
 	err := json.Unmarshal(data, v)
 	CheckTrace(err, 1)
+	return err==nil
 }
-func JsonByte(v interface{}) []byte {
+func JsonDecodeString(str string, v interface{}) bool {
+	err := json.Unmarshal([]byte(str), v)
+	CheckTrace(err, 1)
+	return err==nil
+}
+func JsonEncode(v interface{}) []byte {
 	data, _ := json.Marshal(v)
 	return data
+}
+func JsonEncodeString(v any) string {
+	data, _ := json.Marshal(v)
+	return string(data)
+}
+func StringBool(val string) bool {
+	return val == "true"
+}
+func BoolString(val bool) string {
+	if val {
+		return "true"
+	} else {
+		return "false"
+	}
+}
+func StringFloat(val string) float64 {
+	v, err := strconv.ParseFloat(val, 64)
+	CheckTrace(err, 1)
+	return v
+}
+func FloatString(val float64) string {
+	return strconv.FormatFloat(val, 'f', -1, 64)
+}
+func StringInt(val string) int64 {
+	v, err := strconv.ParseInt(val, 10, 64)
+	CheckTrace(err, 1)
+	return v
+}
+func IntString(val int64) string {
+	return strconv.FormatInt(val, 10)
 }

@@ -46,8 +46,9 @@ func (js *JsonObject) ToStruct(st any) error {
 	data := js.ToBytes()
 	return json.Unmarshal(data, st)
 }
-func (js *JsonObject) ParseBytes(b []byte) error {
-	return json.Unmarshal(b, js)
+func (js *JsonObject) ParseBytes(b []byte) bool {
+	err := json.Unmarshal(b, js)
+	return err == nil
 }
 func (js *JsonObject) GetInterface(key string) any {
 	return (*js)[key]
@@ -71,7 +72,10 @@ func (js *JsonObject) GetString(key string) (string, bool) {
 		return "", false
 	}
 }
-func (js *JsonObject) GetFloat64(key string) (float64, bool) {
+
+// GetNumber 如何这个字段是从解析 json 字符串得到的, 它的类型是 float64, 但是如果这个字段是直接赋值,
+// 那么它可能是 int,float32, byte 等等各种数字类型, 那么它是无法获取成功的.
+func (js *JsonObject) GetNumber(key string) (float64, bool) {
 	val := (*js)[key]
 	switch val.(type) {
 	case float64:
@@ -152,6 +156,14 @@ func (js *JsonObject) Marshal(v any) {
 	}
 	_ = js.ParseBytes(b)
 }
+func (js *JsonObject) UnMarshal(st any) bool {
+	data := js.ToBytes()
+	err := json.Unmarshal(data, st)
+	if err != nil {
+		OutputColor(1, ColorRed, err.Error())
+	}
+	return err == nil
+}
 
 // noinspection GoUnusedExportedFunction
 func NewJsonObject() JsonObject {
@@ -167,9 +179,13 @@ func (ja *JsonArray) ParseString(str string) error {
 func (ja *JsonArray) ParseBytes(b []byte) error {
 	return json.Unmarshal(b, ja)
 }
-func (ja *JsonArray) UnMarshal(st any) error {
+func (ja *JsonArray) UnMarshal(st any) bool {
 	data := ja.ToBytes()
-	return json.Unmarshal(data, st)
+	err := json.Unmarshal(data, st)
+	if err != nil {
+		OutputColor(1, ColorRed, err.Error())
+	}
+	return err == nil
 }
 func (ja *JsonArray) Marshal(v any) {
 	b, err := json.Marshal(v)
