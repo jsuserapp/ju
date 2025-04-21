@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gookit/color"
 	"strings"
+	"sync"
 	"sync/atomic"
 )
 
@@ -24,6 +25,7 @@ const (
 // SaveToLog: log whether save to database, default is false
 // Log: interface of log method
 type _LogParam struct {
+	Mutex   sync.Mutex
 	Save    atomic.Bool
 	DbType  string
 	LogDb   *sql.DB
@@ -99,6 +101,8 @@ func OutputColor(skip int, color string, v ...interface{}) {
 		builder.WriteString(fmt.Sprint(value))
 	}
 	str := builder.String()
+	logParam.Mutex.Lock()
+	defer logParam.Mutex.Unlock()
 	fmt.Print(GetNowTimeMs(), " ", trace, " ")
 	cp := getColorPrint(color)
 	cp("%s\n", str)
@@ -114,18 +118,24 @@ func logToColor(skip int, c, tab string, v ...interface{}) {
 		builder.WriteString(fmt.Sprint(value))
 	}
 	str := builder.String()
-	fmt.Print(GetNowTimeMs(), " ", trace, " ")
-	cp := getColorPrint(c)
-	cp("%s\n", str)
 	saveLog(logParam.DbType, tab, trace, c, str)
+	cp := getColorPrint(c)
+
+	logParam.Mutex.Lock()
+	defer logParam.Mutex.Unlock()
+	fmt.Print(GetNowTimeMs(), " ", trace, " ")
+	cp("%s\n", str)
 }
 
 func logToColorF(skip int, c, tab, format string, v ...interface{}) {
 	trace := GetTrace(skip)
-	fmt.Print(GetNowTimeMs(), " ", trace, " ")
-	cp := getColorPrint(c)
-	cp(format, v...)
 	saveLog(logParam.DbType, tab, trace, c, fmt.Sprintf(format, v...))
+	cp := getColorPrint(c)
+
+	logParam.Mutex.Lock()
+	defer logParam.Mutex.Unlock()
+	fmt.Print(GetNowTimeMs(), " ", trace, " ")
+	cp(format, v...)
 }
 func getColorPrint(c string) (cp colorPrint) {
 	switch c {
