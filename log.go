@@ -104,3 +104,36 @@ func LogCyan(a ...interface{}) { logColor(3, "cyan", a...) }
 
 // noinspection GoUnusedExportedFunction
 func LogWhite(a ...interface{}) { logColor(3, "white", a...) }
+func logColorF(skip int, c, format string, v ...interface{}) {
+	trace := GetTrace(skip)
+	cp := GetColorPrint(c)
+
+	_logMutex.Lock()
+	defer _logMutex.Unlock()
+	fmt.Print(GetNowTimeMs(), " ", trace, " ")
+	cp(format, v...)
+}
+
+// noinspection GoUnusedExportedFunction
+func LogBlackF(format string, a ...interface{}) { logColorF(3, "black", format, a...) }
+
+// noinspection GoUnusedExportedFunction
+func LogRedF(format string, a ...interface{}) { logColorF(3, "red", format, a...) }
+
+// noinspection GoUnusedExportedFunction
+func LogGreenF(format string, a ...interface{}) { logColorF(3, "green", format, a...) }
+
+// noinspection GoUnusedExportedFunction
+func LogYellowF(format string, a ...interface{}) { logColorF(3, "yellow", format, a...) }
+
+// noinspection GoUnusedExportedFunction
+func LogBlueF(format string, a ...interface{}) { logColorF(3, "blue", format, a...) }
+
+// noinspection GoUnusedExportedFunction
+func LogMagentaF(format string, a ...interface{}) { logColorF(3, "magenta", format, a...) }
+
+// noinspection GoUnusedExportedFunction
+func LogCyanF(format string, a ...interface{}) { logColorF(3, "cyan", format, a...) }
+
+// noinspection GoUnusedExportedFunction
+func LogWhiteF(format string, a ...interface{}) { logColorF(3, "white", format, a...) }
