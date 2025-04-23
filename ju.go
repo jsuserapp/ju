@@ -16,7 +16,7 @@ import (
 // noinspection GoUnusedExportedFunction
 func CheckTrace(err error, skip int) bool {
 	if err != nil {
-		logToColor(skip+3, "red", "", err.Error())
+		logColor(skip+3, "red", "", err.Error())
 		return true
 	}
 	return false
@@ -25,21 +25,21 @@ func CheckTrace(err error, skip int) bool {
 // noinspection GoUnusedExportedFunction
 func CheckError(err error) {
 	if err != nil {
-		logToColor(3, "red", "", err.Error())
+		logColor(3, "red", "", err.Error())
 	}
 }
 
 // noinspection GoUnusedExportedFunction
 func CheckSuccess(err error) bool {
 	if err != nil {
-		logToColor(3, "red", "", err.Error())
+		logColor(3, "red", "", err.Error())
 		return false
 	}
 	return true
 }
 func CheckFailure(err error) bool {
 	if err != nil {
-		logToColor(3, "red", "", err.Error())
+		logColor(3, "red", "", err.Error())
 		return true
 	}
 	return false
@@ -121,12 +121,12 @@ func Rand58String(n int) string {
 func JsonDecode(data []byte, v interface{}) bool {
 	err := json.Unmarshal(data, v)
 	CheckTrace(err, 1)
-	return err==nil
+	return err == nil
 }
 func JsonDecodeString(str string, v interface{}) bool {
 	err := json.Unmarshal([]byte(str), v)
 	CheckTrace(err, 1)
-	return err==nil
+	return err == nil
 }
 func JsonEncode(v interface{}) []byte {
 	data, _ := json.Marshal(v)
