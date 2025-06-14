@@ -18,6 +18,6 @@ func HexDecode(h string) []byte {
 		return nil
 	}
 	data, err := hex.DecodeString(h)
-	CheckTrace(err, 1)
+	LogErrorTrace(err, 1)
 	return data
 }

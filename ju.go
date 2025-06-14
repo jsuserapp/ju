@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-// CheckTrace
+// LogErrorTrace
 // trace = 0 记录使用这个函数的位置，trace = 1 记录上一级调用位置
 // noinspection GoUnusedExportedFunction
-func CheckTrace(err error, skip int) bool {
+func LogErrorTrace(err error, skip int) bool {
 	if err != nil {
 		logColor(skip+3, "red", "", err.Error())
 		return true
@@ -22,22 +22,76 @@ func CheckTrace(err error, skip int) bool {
 	return false
 }
 
+// LogErrorTraceTo
+// name 如果 err != nil，记录到 name 日志
+// trace = 0 记录使用这个函数的位置，trace = 1 记录上一级调用位置
 // noinspection GoUnusedExportedFunction
-func CheckError(err error) {
+func LogErrorTraceTo(name string, err error, skip int) bool {
+	if err != nil {
+		logColor(skip+3, "red", name, err.Error())
+		return true
+	}
+	return false
+}
+
+// OutputErrorTrace 此函数不会记录到数据库，避免数据库错误循环调用
+// trace = 0 记录使用这个函数的位置，trace = 1 记录上一级调用位置
+// noinspection GoUnusedExportedFunction
+func OutputErrorTrace(err error, skip int) bool {
+	if err != nil {
+		OutputColor(skip+3, "red", err.Error())
+		return true
+	}
+	return false
+}
+
+// noinspection GoUnusedExportedFunction
+func LogError(err error) {
 	if err != nil {
 		logColor(3, "red", "", err.Error())
 	}
 }
 
 // noinspection GoUnusedExportedFunction
-func CheckSuccess(err error) bool {
+func LogErrorTo(name string, err error) {
+	if err != nil {
+		logColor(3, "red", name, err.Error())
+	}
+}
+
+// LogSucceed 检测一个 error 是否是 nil，如果是 nil 返回 true，不做任何事
+// 如何不是 nil 打印错误信息，并且记录进数据库
+// noinspection GoUnusedExportedFunction
+func LogSucceed(err error) bool {
 	if err != nil {
 		logColor(3, "red", "", err.Error())
 		return false
 	}
 	return true
 }
-func CheckFailure(err error) bool {
+
+// LogFail 检测一个 error 是否是 nil，如果是 nil 返回 false，不做任何事
+// 如何不是 nil 打印错误信息，并且记录进数据库
+// noinspection GoUnusedExportedFunction
+func LogFail(err error) bool {
+	if err != nil {
+		logColor(3, "red", "", err.Error())
+		return true
+	}
+	return false
+}
+
+// noinspection GoUnusedExportedFunction
+func CheckSucceedTo(name string, err error) bool {
+	if err != nil {
+		logColor(3, "red", "", err.Error())
+		return false
+	}
+	return true
+}
+
+// noinspection GoUnusedExportedFunction
+func CheckFailTo(name string, err error) bool {
 	if err != nil {
 		logColor(3, "red", "", err.Error())
 		return true
@@ -120,12 +174,12 @@ func Rand58String(n int) string {
 }
 func JsonDecode(data []byte, v interface{}) bool {
 	err := json.Unmarshal(data, v)
-	CheckTrace(err, 1)
+	LogErrorTrace(err, 1)
 	return err == nil
 }
 func JsonDecodeString(str string, v interface{}) bool {
 	err := json.Unmarshal([]byte(str), v)
-	CheckTrace(err, 1)
+	LogErrorTrace(err, 1)
 	return err == nil
 }
 func JsonEncode(v interface{}) []byte {
@@ -148,7 +202,7 @@ func BoolString(val bool) string {
 }
 func StringFloat(val string) float64 {
 	v, err := strconv.ParseFloat(val, 64)
-	CheckTrace(err, 1)
+	LogErrorTrace(err, 1)
 	return v
 }
 func FloatString(val float64) string {
@@ -156,7 +210,7 @@ func FloatString(val float64) string {
 }
 func StringInt(val string) int64 {
 	v, err := strconv.ParseInt(val, 10, 64)
-	CheckTrace(err, 1)
+	LogErrorTrace(err, 1)
 	return v
 }
 func IntString(val int64) string {

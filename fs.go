@@ -53,7 +53,7 @@ func FileExist(path string) bool {
 func SaveFileAndFolder(fn string, data []byte) bool {
 	folder := filepath.Dir(fn)
 	err := os.MkdirAll(folder, 0777)
-	if CheckFailure(err) {
+	if LogFail(err) {
 		return false
 	}
 	return SaveFile(fn, data)
@@ -95,20 +95,20 @@ func SaveFileExistFail(fn string, data []byte) bool {
 		_ = file.Close()
 	}(file)
 	_, err = file.Write(data)
-	CheckError(err)
+	LogError(err)
 	return err == nil
 }
 
 // SaveFile 函数保存数据到指定文件，要求目标目录必须存在，否则失败。目标文件如果已经存在，会被新数据覆盖
 func SaveFile(fn string, data []byte) bool {
 	file, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
-	if CheckFailure(err) {
+	if LogFail(err) {
 		return false
 	}
 	defer func(file *os.File) {
 		_ = file.Close()
 	}(file)
 	_, err = file.Write(data)
-	CheckError(err)
+	LogError(err)
 	return err == nil
 }

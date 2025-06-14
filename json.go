@@ -151,7 +151,7 @@ func (js *JsonObject) Clear() {
 }
 func (js *JsonObject) Marshal(v any) {
 	b, err := json.Marshal(v)
-	if CheckFailure(err) {
+	if LogFail(err) {
 		return
 	}
 	_ = js.ParseBytes(b)

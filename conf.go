@@ -9,7 +9,7 @@ import (
 func LoadJsConf(js string, conf any) bool {
 	vm := goja.New()
 	v, err := vm.RunScript("conf.js", js)
-	if CheckFailure(err) {
+	if LogFail(err) {
 		return false
 	}
 
@@ -33,7 +33,7 @@ func LoadJsConf(js string, conf any) bool {
 // noinspection GoUnusedExportedFunction
 func LoadJsConfFile(fn string, conf any) bool {
 	data, err := os.ReadFile(fn)
-	if CheckFailure(err) {
+	if LogFail(err) {
 		return false
 	}
 	return LoadJsConf(string(data), conf)
