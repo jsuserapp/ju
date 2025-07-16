@@ -4,7 +4,7 @@ package ju
 
 type LogInfo struct {
 	Id        int    `json:"id"`
-	Color     int    `json:"color"`
+	Color     string `json:"color"`
 	Log       string `json:"log"`
 	Trace     string `json:"trace"`
 	CreatedAt string `json:"created_at"`
