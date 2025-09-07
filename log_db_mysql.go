@@ -2,8 +2,9 @@ package ju
 
 import (
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type MysqlLogDb struct {
@@ -101,7 +102,7 @@ func (mdb *MysqlLogDb) getTotalCount(tag string) int64 {
 	return total
 }
 
-// ClearTagLogs 清空指定 tag 的日志
+// ClearTagLogs 清空指定 tag 的日志，默认日志的 tag 是空串
 func (mdb *MysqlLogDb) ClearTagLogs(tag string) int64 {
 	rst, err := mdb.db.Exec("DELETE FROM log WHERE tag=?", tag)
 	if OutputErrorTrace(err, 0) {
@@ -111,7 +112,7 @@ func (mdb *MysqlLogDb) ClearTagLogs(tag string) int64 {
 	return count
 }
 
-// ClearLogs 清空全部日志，重置表的 id 索引
+// ClearLogs 清空全部日志，重置表的 id 索引，注意这会清空所有 tag 的日志。
 func (mdb *MysqlLogDb) ClearLogs() {
 	_, err := mdb.db.Exec("TRUNCATE log")
 	OutputErrorTrace(err, 0)
@@ -131,10 +132,9 @@ func (mdb *MysqlLogDb) saveLog(tag, color, trace, log string) bool {
 			delCount = count - logParam.maxLogCount
 		}
 	}
+	sqlCase := ""
 	if insert {
-		sqlCase := "INSERT INTO log (tag,color,trace,log) VALUES (?,?,?,?)"
-		_, err := mdb.db.Exec(sqlCase, tag, color, trace, log)
-		return !OutputErrorTrace(err, 0)
+		sqlCase = "INSERT INTO log (color,trace,log,created_at,tag) VALUES (?,?,?,?,?)"
 	} else {
 		if delCount > 0 {
 			_, err := mdb.db.Exec("DELETE FROM log WHERE tag=? ORDER BY created_at LIMIT ?", tag, delCount)
@@ -142,11 +142,11 @@ func (mdb *MysqlLogDb) saveLog(tag, color, trace, log string) bool {
 				return false
 			}
 		}
-		sqlCase := "UPDATE log SET color=?,trace=?,log=?,created_at=? WHERE tag=? ORDER BY created_at LIMIT 1"
-		createdAt := time.Now().Format("2006-01-02 15:04:05.000")
-		_, err := mdb.db.Exec(sqlCase, color, trace, log, createdAt, tag)
-		return !OutputErrorTrace(err, 0)
+		sqlCase = "UPDATE log SET color=?,trace=?,log=?,created_at=? WHERE tag=? ORDER BY created_at LIMIT 1"
 	}
+	createdAt := time.Now().Format("2006-01-02 15:04:05.000")
+	_, err := mdb.db.Exec(sqlCase, color, trace, log, createdAt, tag)
+	return !OutputErrorTrace(err, 0)
 }
 func (mdb *MysqlLogDb) createLogTable() bool {
 	query :=

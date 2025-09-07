@@ -3,7 +3,6 @@ package ju
 import (
 	"bufio"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"io"
 	"os"
 	"path/filepath"
@@ -165,6 +164,10 @@ func (w *fileLogWriter) getTagName(tag string) string {
 func (w *fileLogWriter) clear(tag string) {
 	tag = w.getTagName(tag)
 	path := filepath.Join(w.folder, tag)
+	if !FileExist(path) {
+		//如果文件不存在，不会创建它
+		return
+	}
 	file, err := os.Create(path)
 	if OutputErrorTrace(err, 0) {
 		return
@@ -278,7 +281,7 @@ type FileLogDb struct {
 // writeInterval: 日志保存到文件的间隔，出于性能考虑，不是每条日志都即时的写入文件，而是间隔保存（如果有日志的话）。缺省值是 5 秒（传0）
 //
 // bufSize: 日志缓存缓存，默认值 4096 字节（传0），当缓存满了之后会执行一次写入文件操作。
-func CreateFileLogDb(folder string, writeInterval time.Duration, bufSize int) LogDb {
+func CreateFileLogDb(folder string, writeInterval time.Duration, bufSize int) *FileLogDb {
 	ldb := &FileLogDb{
 		db: newFileLogWriter(folder, writeInterval, bufSize),
 	}
@@ -287,10 +290,9 @@ func CreateFileLogDb(folder string, writeInterval time.Duration, bufSize int) Lo
 
 // CloseFileLogDb 关闭日志对象，这个操作是必要的，但是通常可能不执行这个关闭动作，日志也能成功写入日志文件，
 // 这是因为操作系统优雅的处理了应用进程退出后资源关闭，但是依靠系统关闭不一定 100% 可靠，通常建议在应用退出时执行关闭操作。
-func CloseFileLogDb(db LogDb) {
-	mdb := db.(*FileLogDb)
-	if mdb != nil && mdb.db != nil {
-		mdb.db.Close()
+func CloseFileLogDb(db *FileLogDb) {
+	if db != nil && db.db != nil {
+		db.db.Close()
 	}
 }
 
@@ -308,11 +310,10 @@ func (mdb *FileLogDb) DeleteLogs(before string) int64 {
 	return 0
 }
 
-// GetLogs 获取 log，返回最多 count 条数据，page 是分页，从 0 开始，顺序返回第 page*count+1 到 (page+1)*count+1 条日志.
-// 如果出现错误 logs 会是 nil
-// total 是对应 tag 的日志总数
-func (mdb *FileLogDb) GetLogs(tag string, page, count int) (logs []*LogInfo, total int64) {
-	lines := mdb.db.ReadLastLog(tag, int64(count))
+// GetLastLogs 获取最新的 log，bytes 是读取的字节数.
+// 这个字节数只是参考，因为它不一定是完整的日志行，所以对于不完整的第一行会抛弃（实际上，即使是完整的行，它也会抛弃第一行）。
+func (mdb *FileLogDb) GetLastLogs(tag string, bytes int) (logs []*LogInfo) {
+	lines := mdb.db.ReadLastLog(tag, int64(bytes))
 	for _, line := range lines {
 		params := strings.Split(line, "\t")
 		if len(params) < 4 {
@@ -323,30 +324,18 @@ func (mdb *FileLogDb) GetLogs(tag string, page, count int) (logs []*LogInfo, tot
 			Id:        0,
 			CreatedAt: params[0],
 			Color:     params[1],
-			Log:       params[2],
-			Trace:     params[3],
+			Trace:     params[2],
+			Log:       params[3],
 		}
 		logs = append(logs, &li)
 	}
 	return
 }
-func (mdb *FileLogDb) getTotalCount(tag string) int64 {
-	return 0
-}
 
-// ClearTagLogs 清空指定 tag 的日志
+// ClearTagLogs 清空指定 tag 的日志，默认日志对应的 tag 是空字符串
 func (mdb *FileLogDb) ClearTagLogs(tag string) int64 {
 	mdb.db.clear(tag)
 	return 0
-}
-
-// ClearLogs 清空全部日志，重置表的 id 索引
-func (mdb *FileLogDb) ClearLogs() {
-	mdb.db.mu.Lock()
-	defer mdb.db.mu.Unlock()
-	for tag := range mdb.db.writerList {
-		mdb.db.clear(tag)
-	}
 }
 func (mdb *FileLogDb) saveLog(tag, color, trace, log string) bool {
 	return mdb.db.saveLog(tag, color, trace, log)

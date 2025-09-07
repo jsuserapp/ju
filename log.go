@@ -2,9 +2,10 @@ package ju
 
 import (
 	"fmt"
-	"github.com/gookit/color"
 	"strings"
 	"sync"
+
+	"github.com/gookit/color"
 )
 
 const (
