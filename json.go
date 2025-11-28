@@ -53,16 +53,6 @@ func (js *JsonObject) ParseBytes(b []byte) bool {
 func (js *JsonObject) GetInterface(key string) any {
 	return (*js)[key]
 }
-
-// GetStrInt64 这个函数只是用于取回字串是数字的值，在json字串里面对应的属性仍然是字串，这是因为float64转int64是存在精度误差的
-func (js *JsonObject) GetStrInt64(key string) (int64, bool) {
-	sv, rs := js.GetString(key)
-	if !rs {
-		return 0, false
-	}
-	v, err := strconv.ParseInt(sv, 10, 64)
-	return v, err == nil
-}
 func (js *JsonObject) GetString(key string) (string, bool) {
 	val := (*js)[key]
 	switch val.(type) {
@@ -72,14 +62,51 @@ func (js *JsonObject) GetString(key string) (string, bool) {
 		return "", false
 	}
 }
+func (js *JsonObject) GetUint64(key string) (uint64, bool) {
+	val := (*js)[key]
+	switch v := val.(type) {
+	case uint64:
+		return v, true
+	case uint:
+		return uint64(v), true
+	}
+	return 0, false
+}
+func (js *JsonObject) GetInt64(key string) (int64, bool) {
+	val := (*js)[key]
+	switch v := val.(type) {
+	case int64:
+		return v, true
+	case int:
+		return int64(v), true
+	}
+	return 0, false
+}
 
-// GetNumber 如何这个字段是从解析 json 字符串得到的, 它的类型是 float64, 但是如果这个字段是直接赋值,
-// 那么它可能是 int,float32, byte 等等各种数字类型, 那么它是无法获取成功的.
+// GetNumber 如果这个键值是一个 Go 的数字数字类型，则返回 true，否则返回 false
 func (js *JsonObject) GetNumber(key string) (float64, bool) {
 	val := (*js)[key]
-	switch val.(type) {
+	switch v := val.(type) {
 	case float64:
-		return val.(float64), true
+		return v, true
+	case float32:
+		return float64(v), true
+	case int:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
+	case uint:
+		return float64(v), true
+	case uint64:
+		return float64(v), true
+	case uint8:
+		return float64(v), true
+	case uint16:
+		return float64(v), true
 	default:
 		return 0, false
 	}
