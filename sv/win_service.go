@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gookit/color"
+	"github.com/jsuserapp/ju"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/eventlog"
 	"golang.org/x/sys/windows/svc/mgr"
@@ -28,6 +29,10 @@ func printHelp(name string) {
 }
 
 func StartService(name, desc string, run func()) {
+	workDir := ju.GetExeDirectory()
+	if workDir != "" {
+		ju.ChangeWorkingDirectory(workDir)
+	}
 	inService, err := svc.IsWindowsService()
 	if err != nil {
 		log.Fatalf("failed to determine if we are running in service: %v", err)

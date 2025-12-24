@@ -59,7 +59,7 @@ func newFileLogWriter(folder string, writeInterval time.Duration, bufSize int) *
 		bufSize = 4096 // 4KB 默认缓冲区大小
 	}
 
-	exePath, exeName := GetExePath()
+	exePath, exeName := getExeDirectoryAndName()
 	if folder == "" {
 		folder = exePath
 	}
@@ -79,8 +79,9 @@ func newFileLogWriter(folder string, writeInterval time.Duration, bufSize int) *
 	return flw
 }
 
-// GetExePath 获取当前可执行文件的路径和名称，windows下这个名称是去掉尾部的 .exe 的
-func GetExePath() (path, name string) {
+// getExeDirectoryAndName 获取当前可执行文件所在的文件夹和名称，windows下这个名称是去掉尾部的 .exe 的
+// 因为win下的路径分隔符(\)和Linux(/)下是不一样的，这里还处理成Linux的格式(/)
+func getExeDirectoryAndName() (path, name string) {
 	exePath, err := os.Executable()
 	if OutputErrorTrace(err, 0) {
 		return
