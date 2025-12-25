@@ -122,13 +122,13 @@ func (ls *linuxService) installService() {
 
 	// 2. 准备 Service 文件内容
 	serviceContent := struct {
-		Desc string
-		Path string
-		Dir  string
+		Desc    string
+		Path    string
+		WorkDir string
 	}{
-		Desc: ls.desc,
-		Path: exePath,
-		Dir:  workDir,
+		Desc:    ls.desc,
+		Path:    exePath,
+		WorkDir: workDir,
 	}
 
 	// 3. 定义 Service 文件路径 (/etc/systemd/system/juserv.service)
