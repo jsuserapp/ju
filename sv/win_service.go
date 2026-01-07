@@ -54,7 +54,7 @@ func StartService(name, desc string, run func()) {
 	case CmdHelp, "?":
 		printHelp(name)
 	case CmdInstall:
-		err = installService(name, desc)
+		err = installService(name, name+" service", desc)
 	case CmdUninstall:
 		err = removeService(name)
 	case CmdStart:
@@ -187,7 +187,7 @@ func exePath() (string, error) {
 	return "", err
 }
 
-func installService(name, desc string) error {
+func installService(name, displayName, desc string) error {
 	exepath, err := exePath()
 	if err != nil {
 		return err
@@ -204,7 +204,7 @@ func installService(name, desc string) error {
 		_ = s.Close()
 		return fmt.Errorf("service %s already exists", name)
 	}
-	s, err = m.CreateService(name, exepath, mgr.Config{DisplayName: desc, StartType: mgr.StartAutomatic})
+	s, err = m.CreateService(name, exepath, mgr.Config{DisplayName: displayName, Description: desc, DelayedAutoStart: true, StartType: mgr.StartAutomatic})
 	if err != nil {
 		return err
 	}

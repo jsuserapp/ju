@@ -2,13 +2,42 @@ package ju
 
 import (
 	"encoding/json"
-	"github.com/dop251/goja"
+	"fmt"
 	"os"
+
+	"github.com/dop251/goja"
 )
 
-func LoadJsConf(js string, conf any) bool {
+type JsConf struct {
+	confFile string
+	confVar  string
+}
+
+// NewJsConf 返回一个 JsConf 配置对象
+//
+// confFile 配置文件，如果这个值保持为空，则使用应用可执行文件目录下的 conf.js 文件
+//
+// confVar 配置文件中配置对应的变量，这个值保持空时，使用默认变量 conf
+// noinspection GoUnusedExportedFunction
+func NewJsConf(confFile, confVar string) *JsConf {
+	if confFile == "" {
+		confFile = "conf.js"
+	}
+	if confVar == "" {
+		confVar = "conf"
+	}
+	return &JsConf{confFile: confFile, confVar: confVar}
+}
+func (jc *JsConf) Load(conf any) bool {
+	data, err := os.ReadFile(jc.confFile)
+	if LogFail(err) {
+		return false
+	}
+	return jc.Parse(string(data), conf)
+}
+func (jc *JsConf) Parse(data string, conf any) bool {
 	vm := goja.New()
-	v, err := vm.RunScript("conf.js", js)
+	v, err := vm.RunScript(jc.confFile, string(data))
 	if LogFail(err) {
 		return false
 	}
@@ -16,11 +45,11 @@ func LoadJsConf(js string, conf any) bool {
 	//尝试读取脚本返回值，脚本是一个 json 对象时，适用此种情况
 	obj, ok := v.Export().(map[string]interface{})
 	if !ok {
-		//尝试读取 conf 的全局变量
-		v = vm.Get("conf")
+		//尝试读取设置的全局变量
+		v = vm.Get(jc.confVar)
 		obj, ok = v.Export().(map[string]interface{})
 		if !ok {
-			LogRed("must has a variable name is 'conf' as a object")
+			LogRed(fmt.Sprintf("must has a variable name is '%s' as a object", jc.confVar))
 			return false
 		}
 	}
@@ -30,18 +59,8 @@ func LoadJsConf(js string, conf any) bool {
 	return true
 }
 
-// noinspection GoUnusedExportedFunction
-func LoadJsConfFile(fn string, conf any) bool {
-	data, err := os.ReadFile(fn)
-	if LogFail(err) {
-		return false
-	}
-	return LoadJsConf(string(data), conf)
-}
-
-// noinspection GoUnusedExportedFunction
-func SaveJsConfFile(fn string, conf any) bool {
+func (jc *JsConf) Save(conf any) bool {
 	data, _ := json.MarshalIndent(conf, "", "\t")
-	js := "let conf = " + string(data)
-	return SaveFile(fn, []byte(js))
+	js := "let conf;\nconf = " + string(data)
+	return SaveFile(jc.confFile, []byte(js))
 }

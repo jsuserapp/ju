@@ -150,7 +150,7 @@ func (ls *linuxService) installService() {
 		return
 	}
 
-	ju.LogGreen(fmt.Sprintf("服务文件已创建: %s\n", serviceFile))
+	ju.LogGreen(fmt.Sprintf("服务文件已创建: %s", serviceFile))
 
 	// 5. 重载 systemd 并启用服务
 	ls.runCmd("systemctl", cmdDaemonReload)
@@ -170,7 +170,7 @@ func (ls *linuxService) uninstallService() {
 	if err != nil {
 		ju.LogRed(fmt.Sprintf("警告: 删除服务文件失败 (可能不存在): %v", err))
 	} else {
-		ju.LogGreen(fmt.Sprintf("已删除服务文件: %s\n", serviceFile))
+		ju.LogGreen(fmt.Sprintf("已删除服务文件: %s", serviceFile))
 	}
 
 	// 4. 重载
