@@ -2,8 +2,9 @@ package ju
 
 import (
 	"bytes"
-	"encoding/json"
 	"strconv"
+
+	"github.com/goccy/go-json"
 )
 
 /* Golang 的数组、结构等变量，实际上都是引用。

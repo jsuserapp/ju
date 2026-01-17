@@ -1,11 +1,11 @@
 package ju
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/dop251/goja"
+	"github.com/goccy/go-json"
 )
 
 type JsConf struct {
